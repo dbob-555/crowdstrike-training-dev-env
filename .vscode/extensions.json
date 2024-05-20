@@ -1,0 +1,9 @@
+{
+    "recommendations": [
+        "hashicorp.terraform",
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        "amazonwebservices.aws-toolkit-vscode",
+        "redhat.vscode-yaml",
+        "ZainChen.json"
+    ]
+}
