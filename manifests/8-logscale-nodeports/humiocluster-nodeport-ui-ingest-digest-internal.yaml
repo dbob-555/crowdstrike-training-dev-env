@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: humiocluster-nodeport-ingest  
+  namespace: logging                
+spec:
+  selector:
+    humio.com/node-pool: humiocluster-ingest-only  
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: logscale-port
+  type: NodePort
