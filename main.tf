@@ -1,0 +1,65 @@
+module "vpc" {
+  name_prefix  = var.name_prefix
+  source       = "./modules/vpc"
+  name         = "${var.name_prefix}-${var.cluster_name}"
+  vpc_cidr     = var.vpc_cidr
+  cluster_name = "${var.name_prefix}-${var.cluster_name}"
+  tags         = merge(var.tags, { "Name" = "${var.name_prefix}-${var.cluster_name}"})
+}
+module "msk" {
+  name_prefix                = var.name_prefix
+  source                     = "./modules/msk"
+  cluster_name               = "${var.name_prefix}-${var.cluster_name}"
+  msk_number_of_broker_nodes = local.cluster_size_selected["kafka_broker_node_count"]
+  broker_node_instance_type  = local.cluster_size_selected["kafka_broker_instance_type"]
+  private_subnets            = module.vpc.private_subnets
+  msk_sg_id                  = module.vpc.msk_sg_id
+  kafka_version              = var.kafka_version
+  msk_cluster_name           = var.msk_cluster_name
+  msk_node_volume_size       = local.cluster_size_selected["kafka_broker_data_disk_size"]
+  tags                       = var.tags
+}
+module "eks" {
+  name_prefix                    = var.name_prefix
+  source                         = "./modules/eks"
+  vpc_id                         = module.vpc.vpc_id
+  cluster_name_without_prefix    = var.cluster_name
+  cluster_name                   = "${var.name_prefix}-${var.cluster_name}"
+  cluster_version                = var.cluster_version
+  private_subnets                = module.vpc.private_subnets
+  intra_subnets                  = module.vpc.intra_subnets
+  ami_type                       = var.ami_type
+  logscale_node_root_volume_size = local.cluster_size_selected["logscale_digest_root_disk_size"]
+  logscale_node_root_volume_type = local.cluster_size_selected["logscale_digest_root_disk_type"]
+  logscale_cluster_type          = var.logscale_cluster_type
+  logscale_node_desired_capacity = local.cluster_size_selected["logscale_digest_desired_node_count"]
+  logscale_node_max_capacity     = local.cluster_size_selected["logscale_digest_max_node_count"]
+  logscale_node_min_capacity     = local.cluster_size_selected["logscale_digest_min_node_count"]
+  logscale_instance_type         = local.cluster_size_selected["logscale_digest_instance_type"]
+  ingress_node_desired_capacity = local.cluster_size_selected["logscale_ingress_desired_node_count"]
+  ingress_node_max_capacity     = local.cluster_size_selected["logscale_ingress_max_node_count"]
+  ingress_node_min_capacity     = local.cluster_size_selected["logscale_ingress_min_node_count"]
+  ingress_instance_type         = local.cluster_size_selected["logscale_ingress_instance_type"]
+  ingest_node_desired_capacity   = local.cluster_size_selected["logscale_ingest_desired_node_count"]
+  ingest_node_max_capacity       = local.cluster_size_selected["logscale_ingest_max_node_count"]
+  ingest_node_min_capacity       = local.cluster_size_selected["logscale_ingest_min_node_count"]
+  ingest_instance_type           = local.cluster_size_selected["logscale_ingest_instance_type"]
+  logscale_ingest_data_disk_size = local.cluster_size_selected["logscale_ingest_data_disk_size"]
+  logscale_ingest_data_disk_type = local.cluster_size_selected["logscale_ingest_data_disk_type"]
+  logscale_ingest_root_disk_size = local.cluster_size_selected["logscale_ingest_root_disk_size"]
+  logscale_ingest_root_disk_type = local.cluster_size_selected["logscale_ingest_root_disk_type"]
+  ui_node_desired_capacity   = local.cluster_size_selected["logscale_ui_desired_node_count"]
+  ui_node_max_capacity       = local.cluster_size_selected["logscale_ui_max_node_count"]
+  ui_node_min_capacity       = local.cluster_size_selected["logscale_ui_min_node_count"]
+  ui_instance_type           = local.cluster_size_selected["logscale_ui_instance_type"]
+  logscale_ui_data_disk_size = local.cluster_size_selected["logscale_ui_data_disk_size"]
+  logscale_ui_data_disk_type = local.cluster_size_selected["logscale_ui_data_disk_type"]
+  logscale_ui_root_disk_size = local.cluster_size_selected["logscale_ui_root_disk_size"]
+  logscale_ui_root_disk_type = local.cluster_size_selected["logscale_ui_root_disk_type"]
+  zone_name          = var.zone_name
+  hostname           = var.name_prefix
+  msk_sg_id          = module.vpc.msk_sg_id
+  route53_record_ttl = var.route53_record_ttl
+  s3_bucket_prefix   = var.eks_s3_bucket_prefix
+  tags               = merge(var.tags, { "Name" = "${var.name_prefix}-${var.cluster_name}"})
+}
