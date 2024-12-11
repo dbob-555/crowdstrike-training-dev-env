@@ -1,0 +1,180 @@
+apiVersion: core.humio.com/v1alpha1
+kind: HumioCluster
+metadata:
+  name: humiocluster  
+  namespace: logging
+spec:
+  commonEnvironmentVariables:
+    - name: PUBLIC_URL
+      value: "https://db1.netbuildertraining.com"
+    - name: "S3_STORAGE_BUCKET"
+      value: "db1-humiocluster" 
+    - name: "S3_STORAGE_REGION"
+      value: "us-east-2"
+    - name: "S3_STORAGE_ENCRYPTION_KEY"
+      valueFrom:
+        secretKeyRef: 
+          name: humiocluster-s3-storage-encryption 
+          key: s3-storage-encryption-key
+    - name: "USING_EPHEMERAL_DISKS"
+      value: "true"
+    - name: "LOCAL_STORAGE_PERCENTAGE"
+      value: "80"
+    - name: "S3_STORAGE_PREFERRED_COPY_SOURCE"
+      value: "true"
+    - name: "LOCAL_STORAGE_MIN_AGE_DAYS"
+      value: "7"
+    - name: "ZOOKEEPER_URL"
+      value: "z-1.mskclusterdb1humioclus.geyv0q.c3.kafka.us-east-2.amazonaws.com:2181,z-2.mskclusterdb1humioclus.geyv0q.c3.kafka.us-east-2.amazonaws.com:2181,z-3.mskclusterdb1humioclus.geyv0q.c3.kafka.us-east-2.amazonaws.com:2181"
+    - name: "KAFKA_SERVERS"
+      value: "b-1.mskclusterdb1humioclus.geyv0q.c3.kafka.us-east-2.amazonaws.com:9094,b-2.mskclusterdb1humioclus.geyv0q.c3.kafka.us-east-2.amazonaws.com:9094,b-3.mskclusterdb1humioclus.geyv0q.c3.kafka.us-east-2.amazonaws.com:9094"
+    - name: "SINGLE_USER_USERNAME"
+      value: "admin"
+    - name: "SINGLE_USER_PASSWORD"
+      valueFrom:
+        secretKeyRef:
+          name: humiocluster-single-user-password
+          key: password
+  resources:
+    limits:
+      cpu: 1
+      memory: 7Gi
+    requests:
+      cpu: 1
+      memory: 7Gi
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: "kubernetes.io/arch"
+                operator: In
+                values: ["amd64"]
+              - key: "kubernetes.io/os"
+                operator: In
+                values: ["linux"]
+              - key: "k8s-app"
+                operator: In
+                values: ["logscale"]
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: "logscale.io/name"
+                operator: In
+                values: ["humio"]
+          topologyKey: "kubernetes.io/hostname"
+  dataVolumePersistentVolumeClaimSpecTemplate:
+    accessModes: ["ReadWriteOnce"]
+    resources:
+      requests:
+        storage: 100Gi
+    storageClassName: "topolvm-provisioner"
+  digestPartitionsCount: 840
+  extraKafkaConfigs: "security.protocol=SSL"
+  hostname: ab1.netbuildertraining.com
+  esHostname: es-db1.netbuildertraining.com
+  humioServiceAccountAnnotations:
+    eks.amazonaws.com/role-arn: "arn:aws:iam::452968854315:role/logscale-db1-humiocluster"
+  image: "humio/humio-core:1.142.1"
+  ingress:
+    enabled: false
+  license:
+    secretKeyRef:
+      name: humiocluster-license
+      key: humiocluster-license-key
+  nodeCount: 3
+  nodePools:
+    - name: "ingest-only"
+      spec:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: "kubernetes.io/arch"
+                      operator: In
+                      values: ["amd64"]
+                    - key: "kubernetes.io/os"
+                      operator: In
+                      values: ["linux"]
+                    - key: "k8s-app"
+                      operator: In
+                      values: ["logscale-ingest"]
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                    - key: "logscale.io/name"
+                      operator: In
+                      values: ["humio"]
+                topologyKey: "kubernetes.io/hostname"
+        dataVolumePersistentVolumeClaimSpecTemplate:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 100Gi
+          storageClassName: "gp2"
+        extraKafkaConfigs: "security.protocol=SSL"
+        humioServiceAccountAnnotations:
+          eks.amazonaws.com/role-arn: "arn:aws:iam::452968854315:role/logscale-db1-humiocluster"
+        image: "humio/humio-core:1.142.1"
+        nodeCount: 3
+        resources:
+          limits:
+            cpu: 1
+            memory: 5Gi
+          requests:
+            cpu: 1
+            memory: 1Gi
+        updateStrategy:
+          type: "RollingUpdate"
+    - name: "ui-only"
+      spec:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: "kubernetes.io/arch"
+                      operator: In
+                      values: ["amd64"]
+                    - key: "kubernetes.io/os"
+                      operator: In
+                      values: ["linux"]
+                    - key: "k8s-app"
+                      operator: In
+                      values: ["logscale-ui"]
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                    - key: "logscale.io/name"
+                      operator: In
+                      values: ["humio"]
+                topologyKey: "kubernetes.io/hostname"
+        dataVolumePersistentVolumeClaimSpecTemplate:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 100Gi
+          storageClassName: "gp2"
+        extraKafkaConfigs: "security.protocol=SSL"
+        humioServiceAccountAnnotations:
+          eks.amazonaws.com/role-arn: "arn:aws:iam::452968854315:role/logscale-db1-humiocluster"
+        image: "humio/humio-core:1.142.1"
+        nodeCount: 3
+        nodeUUIDPrefix: "/logscale_ui"
+        resources:
+          limits:
+            cpu: 1
+            memory: 5Gi
+          requests:
+            cpu: 1
+            memory: 1Gi
+        updateStrategy:
+          type: "RollingUpdate"
+  nodeUUIDPrefix: "/logscale_ingest"
+  targetReplicationFactor: 3
+  tls:
+    enabled: true
