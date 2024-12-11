@@ -1,4 +1,4 @@
-!/bin/bash
+#!/bin/bash
 export HUMIO_OPERATOR_VERSION=0.25.0
 kubectl apply --server-side -f https://raw.githubusercontent.com/humio/humio-operator/humio-operator-${HUMIO_OPERATOR_VERSION}/config/crd/bases/core.humio.com_humioclusters.yaml
 kubectl apply --server-side -f https://raw.githubusercontent.com/humio/humio-operator/humio-operator-${HUMIO_OPERATOR_VERSION}/config/crd/bases/core.humio.com_humioexternalclusters.yaml
