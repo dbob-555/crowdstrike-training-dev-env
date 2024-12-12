@@ -50,7 +50,7 @@ resource "aws_iam_role" "role_eks_logscale" {
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
-            "${module.eks.oidc_provider}:sub" = "system:serviceaccount:logging:${var.cluster_name_without_prefix}-humio"
+            "${module.eks.oidc_provider}:sub" = ["system:serviceaccount:logging:humiocluster-digest-only-humio", "system:serviceaccount:logging:humiocluster-ingest-only-humio", "system:serviceaccount:logging:humiocluster-ui-only-humio"]
           }
         }
       }
